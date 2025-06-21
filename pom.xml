@@ -9,9 +9,9 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.sparta.tdd</groupId>
-	<artifactId>cofee-order-system</artifactId>
+	<artifactId>coffee-order-system</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>cofee-order-system</name>
+	<name>coffee-order-system</name>
 	<description>Demo project for Spring Boot</description>
 	<url/>
 	<licenses>
