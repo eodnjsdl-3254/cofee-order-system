@@ -1,4 +1,4 @@
-package com.sparta.tdd.test.cofeeshop.service;
+package com.sparta.tdd.test.coffeeshop.service;
 
 import com.sparta.tdd.coffeeshop.domain.menu.Menu;
 import com.sparta.tdd.coffeeshop.domain.menu.repo.MenuRepository;
