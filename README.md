@@ -52,7 +52,7 @@
     ```
 
 ### 3. 포인트 충전
--   **POST** `/api/points/charge`
+-   **POST** `/api/user/points/charge`
 -   **요청 예시:**
     ```json
     {
@@ -74,8 +74,8 @@
     -   Maven (설치 권장, 또는 Maven Wrapper 사용)
 2.  **프로젝트 클론:**
     ```bash
-    git clone [YOUR_REPOSITORY_URL]
-    cd [your-project-folder]
+    git clone https://github.com/eodnjsdl-3254/coffee-order-system.git
+    cd coffee-order-system
     ```
 3.  **애플리케이션 실행:**
     ```bash
