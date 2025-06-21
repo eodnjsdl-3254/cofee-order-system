@@ -18,7 +18,7 @@ public class OrderController {
 
     private final OrderService orderService;
 
-    @PostMapping("/orders") // ⭐ POST 요청, /api/orders 전체 경로를 정의합니다.
+    @PostMapping("/orders") // ⭐ POST 요청, 
     public ResponseEntity<OrderResponse> placeOrder(@RequestBody OrderRequest request) {
         OrderResponse response = orderService.placeOrder(request);
         return ResponseEntity.ok(response);

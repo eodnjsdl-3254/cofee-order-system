@@ -1,7 +1,7 @@
 package com.sparta.tdd.cofeeshop.exception;
 
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+//import lombok.RequiredArgsConstructor;
 
 @Getter
 //@RequiredArgsConstructor // Lombok이 'private final ErrorCode errorCode;'에 대한 생성자를 자동으로 만들어줍니다.
