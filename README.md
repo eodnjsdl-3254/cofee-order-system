@@ -67,6 +67,25 @@
       "point": 22000
     }
     ```
+
+### 4. 공통 에러 응답 형식 
+API 요청 처리 중 오류가 발생하면 다음과 같은 형식으로 응답합니다.
+
+-   **예시:**
+    ```json
+    {
+      "timestamp": "2024-06-22T10:30:00.123456789",
+      "code": "INVALID_INPUT",
+      "message": "충전 금액은 0보다 커야 합니다.",
+      "path": "/api/users/points/charge"
+    }
+    ```
+-   **주요 에러 코드:**
+    * `INVALID_INPUT`: 유효하지 않은 요청 데이터 (HTTP 400 Bad Request)
+    * `USER_NOT_FOUND`: 요청한 사용자를 찾을 수 없음 (HTTP 404 Not Found)
+    * `INSUFFICIENT_POINTS`: 포인트 부족 (HTTP 400 Bad Request)
+    * `INTERNAL_SERVER_ERROR`: 서버 내부 오류 (HTTP 500 Internal Server Error)
+      
 ## 🚀 로컬 개발 환경 설정 및 실행
 
 1.  **필수 요구 사항 설치:**
