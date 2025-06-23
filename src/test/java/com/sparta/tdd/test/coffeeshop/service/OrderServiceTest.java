@@ -56,7 +56,14 @@ class OrderServiceTest {
     @DisplayName("유효한 요청으로 커피 주문 및 결제에 성공한다.")
     void placeOrder_Success() {
         // Given
-        OrderRequest request = new OrderRequest(testUser.getUserId(), testMenu.getId(), 2); // 2개 주문
+    	String userId = testUser.getUserId();
+        Long menuId = testMenu.getId();
+        int quantity = 2; // 2개 주문
+        
+    	// 총 결제 금액 예상: testMenu의 가격 * 수량
+        long expectedTotalPrice = (long) testMenu.getPrice() * quantity; // <-- 이 변수를 사용합니다.
+
+        OrderRequest request = new OrderRequest(testUser.getUserId(), testMenu.getId(), quantity, expectedTotalPrice); // 2개 주문
 
         // Mock 객체의 동작 정의 (Stubbing)
         given(userRepository.findById(testUser.getUserId())).willReturn(Optional.of(testUser));
@@ -83,10 +90,10 @@ class OrderServiceTest {
         assertThat(response.getMenuName()).isEqualTo(testMenu.getName());
         assertThat(response.getQuantity()).isEqualTo(request.getQuantity());
 
-        long expectedTotalPrice = (long) testMenu.getPrice() * request.getQuantity();
-        //long expectedRemainingPoints = testUser.getPoint() - expectedTotalPrice;
+        long totalPrice = (long) testMenu.getPrice() * request.getQuantity();
+        //long expectedRemainingPoints = testUser.getPoint() - totalPrice;
 
-        assertThat(response.getTotalPrice()).isEqualTo(expectedTotalPrice);
+        assertThat(response.getTotalPrice()).isEqualTo(totalPrice);
         assertThat(response.getRemainingPoints()).isEqualTo(testUser.getPoint());
         assertThat(response.getStatus()).isEqualTo(Order.OrderStatus.COMPLETED); // Order.OrderStatus.COMPLETED);
         assertThat(response.getOrderId()).isNotNull(); // OrderId가 생성되었는지 확인
@@ -106,7 +113,7 @@ class OrderServiceTest {
         assertThat(capturedOrder.getUserId()).isEqualTo(request.getUserId());
         assertThat(capturedOrder.getMenuId()).isEqualTo(request.getMenuId());
         assertThat(capturedOrder.getQuantity()).isEqualTo(request.getQuantity());
-        assertThat(capturedOrder.getTotalPrice()).isEqualTo(expectedTotalPrice);
+        assertThat(capturedOrder.getTotalPrice()).isEqualTo(totalPrice);
         assertThat(capturedOrder.getStatus()).isEqualTo(Order.OrderStatus.COMPLETED);
         assertThat(capturedOrder.getOrderId()).isEqualTo("test-order-id-123"); // 캡처된 객체의 ID도 확인
     }

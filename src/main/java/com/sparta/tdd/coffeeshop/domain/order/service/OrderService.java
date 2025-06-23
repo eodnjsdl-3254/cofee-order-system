@@ -12,19 +12,15 @@ import com.sparta.tdd.coffeeshop.domain.user.User;
 import com.sparta.tdd.coffeeshop.domain.user.repo.UserRepository;
 
 import lombok.RequiredArgsConstructor;
-
+import lombok.extern.slf4j.Slf4j; // log 객체를 위한 Slf4j import
 
 import org.springframework.stereotype.Service;
-
-// 이 서비스가 의존할 다른 서비스나 클라이언트가 있다면 여기에 import 합니다.
-// 예: import com.sparta.tdd.cofeeshop.service.PointService;
-// 예: import com.sparta.tdd.cofeeshop.service.client.DataCollectionPlatformClient;
-
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor // final 필드를 주입받기 위한 Lombok 어노테이션
 @Transactional // 서비스 메서드에 트랜잭션 적용
+@Slf4j // log 객체 자동 생성
 public class OrderService {
 
     private final UserRepository userRepository;
@@ -33,49 +29,95 @@ public class OrderService {
 
     // TODO: 이 메서드를 구현하여 OrderServiceTest의 성공 케이스를 통과시키세요.
     public OrderResponse placeOrder(OrderRequest request) {
-    	// 1. 유효성 검사: 주문 수량
+
+        // 0. 주문 요청 초기 로그 (기존 메시지 유지)
+        log.info("주문 요청 시작: userId={}, menuId={}, quantity={}",
+                request.getUserId(), request.getMenuId(), request.getQuantity());
+
+        // 1. 유효성 검사: 주문 수량
+        log.debug("주문 수량 유효성 검사 시작: quantity={}", request.getQuantity());
         if (request.getQuantity() <= 0) {
+            log.warn("주문 실패: 주문 수량이 유효하지 않음. quantity={}", request.getQuantity());
             throw new CustomException(ErrorCode.INVALID_INPUT, "주문 수량은 0보다 커야 합니다.");
         }
+        log.debug("주문 수량 유효성 검사 통과.");
 
         // 2. 사용자 조회
+        log.debug("사용자 조회 시도: userId={}", request.getUserId());
         // 비관적 락을 적용한 findById를 사용하므로, findById(userId)로 충분합니다.
         User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> {
+                    log.error("주문 실패: 사용자를 찾을 수 없음. userId={}", request.getUserId()); // 사용자를 못 찾으면 치명적 오류로 간주하여 ERROR
+                    return new CustomException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다.");
+                });
+        log.info("사용자 조회 성공: userId={}, currentPoint={}", user.getUserId(), user.getPoint());
+        log.debug("사용자 버전 확인: version={}", user.getVersion()); // 낙관적 락을 위해 버전 정보도 로그로 남김
 
         // 3. 메뉴 조회
+        log.debug("메뉴 조회 시도: menuId={}", request.getMenuId());
         Menu menu = menuRepository.findById(request.getMenuId())
-                .orElseThrow(() -> new CustomException(ErrorCode.MENU_NOT_FOUND, "메뉴를 찾을 수 없습니다."));
+                .orElseThrow(() -> {
+                    log.error("주문 실패: 메뉴를 찾을 수 없음. menuId={}", request.getMenuId()); // 메뉴를 못 찾으면 치명적 오류로 간주하여 ERROR
+                    return new CustomException(ErrorCode.MENU_NOT_FOUND, "메뉴를 찾을 수 없습니다.");
+                });
+        log.info("메뉴 조회 성공: menuId={}, menuName={}, menuPrice={}",
+                 menu.getId(), menu.getName(), menu.getPrice());
 
-        // 4. 총 결제 금액 계산
-        long totalPrice = (long) menu.getPrice() * request.getQuantity();
+        // 4. 총 결제 금액 계산 및 클라이언트 요청 금액과의 비교 (선택 사항이나 권장)
+        log.debug("총 결제 금액 계산 시작: menuPrice={}, quantity={}", menu.getPrice(), request.getQuantity());
+        long calculatedTotalPrice = (long) menu.getPrice() * request.getQuantity();
+
+        // 클라이언트에서 넘겨준 totalPrice가 있다면, 서버에서 계산한 값과 비교하여 검증
+        // request.getTotalPrice()가 클라이언트가 보낸 값이라고 가정합니다.
+        if (request.getTotalPrice() != 0 && calculatedTotalPrice != request.getTotalPrice()) {
+            log.warn("주문 경고: 클라이언트 제공 총 가격({})과 서버 계산 총 가격({})이 일치하지 않습니다.",
+                     request.getTotalPrice(), calculatedTotalPrice);
+            // 이 경우 예외를 발생시킬지, 서버 계산 가격으로 강제할지는 정책에 따라 다릅니다.
+            // 여기서는 서버 계산 가격을 따르거나, 필요시 예외를 발생시킬 수 있습니다.
+            // throw new CustomException(ErrorCode.INVALID_INPUT, "요청된 총 가격이 올바르지 않습니다.");
+        }
+        log.info("최종 결제 금액 결정: {}원", calculatedTotalPrice);
+
 
         // 5. 포인트 잔액 확인 및 차감
-        if (user.getPoint() < totalPrice) {
+        log.debug("포인트 잔액 확인: userPoint={}, requiredPrice={}", user.getPoint(), calculatedTotalPrice);
+        if (user.getPoint() < calculatedTotalPrice) {
+            log.warn("주문 실패: 포인트 부족. userId={}, 현재 포인트={}, 필요 포인트={}",
+                     user.getUserId(), user.getPoint(), calculatedTotalPrice);
             throw new CustomException(ErrorCode.INSUFFICIENT_POINT, "포인트가 부족합니다.");
         }
-        user.deductPoint(totalPrice); // User 엔티티의 deductPoint 메서드 사용
+        user.deductPoint(calculatedTotalPrice); // User 엔티티의 deductPoint 메서드 사용
+        log.info("포인트 차감 완료: userId={}, 차감 후 잔액={}", user.getUserId(), user.getPoint());
 
         // 6. 업데이트된 사용자 정보 저장 (Transactional 덕분에 flush 시점에 자동 반영될 수도 있지만, 명시적으로 save)
         // 비관적 락을 사용한 조회 후 엔티티 변경은 자동으로 업데이트됩니다. 명시적 save는 필수는 아님.
         // 하지만 Mockito 테스트 시 save 호출을 verify하기 위해 명시적으로 호출하는 경우가 많습니다.
-        userRepository.save(user);
+        userRepository.save(user); // 변경된 User 엔티티를 명시적으로 저장
+        log.debug("업데이트된 사용자 정보 저장 호출 완료.");
 
-        // 7. 주문 생성
-        Order order = new Order(
-                request.getUserId(),
-                request.getMenuId(),
-                request.getQuantity(),
-                totalPrice
-        );
-        // Order 엔티티에서 ID가 @GeneratedValue(strategy = GenerationType.UUID)로 자동 생성되므로,
-        // 별도로 ID를 설정할 필요는 없습니다.
+
+        // 7. 주문 엔티티 생성
+        log.debug("주문 엔티티 생성 시작...");
+        // Order 엔티티에서 ID, orderDate, status가 @GeneratedValue, @Builder.Default 등으로 자동 설정된다고 가정합니다.
+        Order order = Order.builder()
+                .userId(request.getUserId())
+                .menuId(request.getMenuId())
+                .quantity(request.getQuantity())
+                .totalPrice(calculatedTotalPrice) // 계산된 최종 가격 사용
+                // .orderDate(LocalDateTime.now()) // @Builder.Default가 있다면 불필요
+                // .status(Order.OrderStatus.COMPLETED) // @Builder.Default가 있다면 불필요
+                .build();
+        log.debug("주문 엔티티 생성 완료: 임시 Order ID={}", order.getOrderId()); // ID가 아직 DB에 저장 전이라면 null일 수 있음
 
         // 8. 주문 저장
         Order savedOrder = orderRepository.save(order);
+        log.info("주문 엔티티 최종 저장 완료: orderId={}", savedOrder.getOrderId()); // DB 저장 후 실제 ID 확인
 
         // 9. 응답 DTO 생성 및 반환
-        return OrderResponse.from(savedOrder, menu.getName(), user.getPoint());
-    } 
-    
+        log.debug("OrderResponse 생성 및 반환 준비: orderId={}, menuName={}, remainingPoint={}",
+                  savedOrder.getOrderId(), menu.getName(), user.getPoint());
+        OrderResponse response = OrderResponse.from(savedOrder, menu.getName(), user.getPoint());
+        log.info("주문 처리 최종 완료: orderId={}", response.getOrderId());
+        return response;
+    }
 }

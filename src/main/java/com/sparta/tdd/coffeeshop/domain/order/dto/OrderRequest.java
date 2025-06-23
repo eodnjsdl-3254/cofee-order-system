@@ -18,4 +18,5 @@ public class OrderRequest {
     private Long menuId;
     
     private int quantity;
+    private long totalPrice;
 }

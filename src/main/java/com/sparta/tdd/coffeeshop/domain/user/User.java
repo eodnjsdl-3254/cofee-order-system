@@ -3,15 +3,18 @@ package com.sparta.tdd.coffeeshop.domain.user;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "users") // 테이블 이름을 "user" 대신 "users"로 변경
 @AllArgsConstructor
@@ -25,12 +28,21 @@ public class User {
     private long point;
 
     @Version // 낙관적 락을 위한 버전 필드
+    @Column(name = "version")
     private Long version;
 
     public User(String userId, long point) {
         this.userId = userId;
         this.point = point;
         this.username = userId; // 임시로 userId를 username으로 사용
+        this.version = 0L;
+    }
+    
+    @PrePersist
+    public void prePersist() {
+        if (this.version == null) {
+            this.version = 0L; // null이면 0으로 초기화
+        }
     }
 
     // 포인트 충전 로직

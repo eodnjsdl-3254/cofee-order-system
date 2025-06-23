@@ -21,10 +21,10 @@ public class Order {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID) // UUID로 ID 자동 생성
     @Column(name = "order_id", nullable = false, unique = true)
-    private String orderId;
+    private String orderId; // 주문 ID
 
     @Column(name = "user_id", nullable = false)
-    private String userId;
+    private String userId; // 사용자 ID
 
     @Column(name = "menu_id", nullable = false)
     private Long menuId; // Menu 엔티티의 ID와 연결
@@ -43,15 +43,58 @@ public class Order {
     private OrderStatus status; // 주문 상태 (예: COMPLETED, CANCELLED 등)
 
     // 생성자
-    public Order(String userId, Long menuId, int quantity, long totalPrice) {
-        this.userId = userId;
-        this.menuId = menuId;
-        this.quantity = quantity;
-        this.totalPrice = totalPrice;
-        this.orderDate = LocalDateTime.now();
-        this.status = OrderStatus.COMPLETED; // 초기 상태는 완료로 가정
+    private Order(Builder builder) {
+        this.userId = builder.userId;
+        this.menuId = builder.menuId;
+        this.quantity = builder.quantity;
+        this.totalPrice = builder.totalPrice;
+        this.orderDate = builder.orderDate;
+        this.status = builder.status;
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static class Builder {
+        private String userId;
+        private Long menuId;
+        private int quantity;
+        private long totalPrice;
+        private LocalDateTime orderDate = LocalDateTime.now(); // 기본값 설정
+        private OrderStatus status = OrderStatus.COMPLETED; // 기본값 설정
+
+        public Builder userId(String userId) {
+            this.userId = userId;
+            return this;
+        }
+        public Builder menuId(Long menuId) {
+            this.menuId = menuId;
+            return this;
+        }
+        public Builder quantity(int quantity) {
+            this.quantity = quantity;
+            return this;
+        }
+        public Builder totalPrice(long totalPrice) {
+            this.totalPrice = totalPrice;
+            return this;
+        }
+        public Builder orderDate(LocalDateTime orderDate) {
+            this.orderDate = orderDate;
+            return this;
+        }
+        public Builder status(OrderStatus status) {
+            this.status = status;
+            return this;
+        }
+
+        public Order build() {
+            // 필수 필드에 대한 null 체크 로직 추가 가능
+            return new Order(this);
+        }
+    }
+    
     // 주문 상태 Enum
     public enum OrderStatus {
         PENDING,     // 보류 중

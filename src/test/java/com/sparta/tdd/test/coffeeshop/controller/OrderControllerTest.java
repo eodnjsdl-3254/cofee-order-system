@@ -72,7 +72,7 @@ class OrderControllerTest {
         // 예상 남은 포인트: 10000 - 8000 = 2000
         long expectedRemainingPoints = testUser.getPoint() - expectedTotalPrice;
 
-        OrderRequest request = new OrderRequest(userId, menuId, quantity);
+        OrderRequest request = new OrderRequest(userId, menuId, quantity, expectedTotalPrice);
 
         // When & Then
         mockMvc.perform(post("/api/orders")

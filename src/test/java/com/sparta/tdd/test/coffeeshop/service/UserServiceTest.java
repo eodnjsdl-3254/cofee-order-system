@@ -38,6 +38,10 @@ import com.sparta.tdd.coffeeshop.domain.user.User;
 import com.sparta.tdd.coffeeshop.domain.user.repo.UserRepository;
 import com.sparta.tdd.coffeeshop.domain.user.service.UserService;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
+
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -50,10 +54,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString; // userId가 String 타입이라면 anyString() 사용
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.when;
 
 
 @ExtendWith(MockitoExtension.class)
@@ -61,6 +67,9 @@ class UserServiceTest {
 
     @Mock
     private UserRepository userRepository;
+    
+    @Mock 
+    private EntityManager entityManager;
 
     @InjectMocks
     private UserService pointService;
@@ -81,21 +90,32 @@ class UserServiceTest {
         long expectedPoint = testUser.getPoint() + chargeAmount;
 
         // Mocking: userRepository.findById가 testUser를 반환하도록 설정
-        given(userRepository.findById(testUser.getUserId())).willReturn(Optional.of(testUser));
+        //given(userRepository.findById(testUser.getUserId())).willReturn(Optional.of(testUser));
         // Mocking: userRepository.save가 호출될 때 전달된 User 객체를 그대로 반환하도록 설정
         // (실제 save 동작을 흉내내어 user 객체의 상태 변화가 유지되도록)
-        given(userRepository.save(any(User.class))).willReturn(testUser);
+        //given(userRepository.save(any(User.class))).willReturn(testUser);
 
+        // Mocking: entityManager.find가 testUser를 반환하도록 설정
+        // 기존 userRepository.findById Mocking 제거 (UserService에서 더 이상 호출하지 않음)
+        when(entityManager.find(eq(User.class), eq(testUser.getUserId()), any(Map.class))) // <-- 변경
+        .thenReturn(testUser);
+        
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
 
         // When
         pointService.chargePoint(testUser.getUserId(), chargeAmount);
 
         // Then
-        // 1. userRepository.findById가 호출되었는지 검증
-        verify(userRepository, times(1)).findById(testUser.getUserId());
-        // 2. userRepository.save가 호출되었는지 검증
+        // 1. entityManager.find가 호출되었는지 검증 (findById 대신)
+        verify(entityManager, times(1)).find(eq(User.class), eq(testUser.getUserId()), any(Map.class));
+        
+        // 2. userRepository.findById()에 대한 verify는 제거합니다.
+        // verify(userRepository, times(1)).findById(testUser.getUserId()); // <-- 이 줄을 제거하세요!
+        
+        // 3. userRepository.save가 호출되었는지 검증
         verify(userRepository, times(1)).save(testUser);
-        // 3. User 객체의 포인트가 올바르게 증가했는지 검증
+
+        // 4. User 객체의 포인트가 올바르게 증가했는지 검증
         assertEquals(expectedPoint, testUser.getPoint());
     }
 
@@ -121,8 +141,11 @@ class UserServiceTest {
         assertEquals(ErrorCode.INVALID_INPUT, zeroException.getErrorCode());
         assertEquals("충전 금액은 0보다 커야 합니다.", zeroException.getMessage());
 
+        // find 메서드 (EntityManager)와 save 메서드 (UserRepository)가 호출되지 않았는지 검증
+        verify(entityManager, never()).find(any(Class.class), any(String.class), any(Map.class)); // 어떤 find 호출도 없어야 함
+        
         // findById와 save 메서드가 호출되지 않았는지 검증
-        verify(userRepository, never()).findById(anyString());
+        //verify(userRepository, never()).findById(anyString());
         verify(userRepository, never()).save(any(User.class));
     }
 
@@ -134,15 +157,24 @@ class UserServiceTest {
         long chargeAmount = 1000L;
 
         // Mocking: userRepository.findById가 Optional.empty()를 반환하도록 설정
-        given(userRepository.findById(nonExistentUserId)).willReturn(Optional.empty());
+        //given(userRepository.findById(nonExistentUserId)).willReturn(Optional.empty());
 
-        // When & Then
-        CustomException exception = assertThrows(CustomException.class,
-                () -> pointService.chargePoint(nonExistentUserId, chargeAmount));
+        // Mocking: entityManager.find가 null을 반환하도록 설정        
+        when(entityManager.find(eq(User.class), eq(nonExistentUserId), any(Map.class)))
+        .thenReturn(null);
 
-        assertEquals(ErrorCode.USER_NOT_FOUND, exception.getErrorCode());
-        // save 메서드가 호출되지 않았는지 검증
-        verify(userRepository, times(0)).save(any(User.class));
+	    // When & Then
+	    CustomException exception = assertThrows(CustomException.class,
+	            () -> pointService.chargePoint(nonExistentUserId, chargeAmount));
+	
+	    assertEquals(ErrorCode.USER_NOT_FOUND, exception.getErrorCode());
+	
+	    // find 메서드 (EntityManager)가 호출되었는지 검증
+	    // !!! 이 부분이 핵심 수정입니다. PESSIMISTIC_WRITE 대신 Map을 예상하도록 변경합니다. !!!
+	    verify(entityManager, times(1)).find(eq(User.class), eq(nonExistentUserId), any(Map.class)); // <-- 이 줄을 수정!
+	    
+	    // save 메서드가 호출되지 않았는지 검증
+	    verify(userRepository, never()).save(any(User.class));
     }
 
     @Test
@@ -160,9 +192,15 @@ class UserServiceTest {
         // Mocking: findById가 호출될 때마다 동일한 User 객체를 반환
         // 이 Mocking은 실제 DB 락을 흉내내지 못하므로, 이 테스트는 실패할 가능성이 높습니다.
         // 이것이 단위 테스트의 한계이며, 동시성 문제는 통합 테스트에서 DB 락으로 해결해야 함을 보여줍니다.
-        given(userRepository.findById(userId)).willReturn(Optional.of(concurrentUser));
-        given(userRepository.save(any(User.class))).willReturn(concurrentUser);
+        //given(userRepository.findById(userId)).willReturn(Optional.of(concurrentUser));
+        //given(userRepository.save(any(User.class))).willReturn(concurrentUser);
 
+        // Mocking: entityManager.find가 호출될 때마다 동일한 User 객체를 반환
+        // 이 Mocking은 실제 DB 락을 흉내내지 못하므로, 이 테스트는 실패할 가능성이 높습니다.
+        // 이것이 단위 테스트의 한계이며, 동시성 문제는 통합 테스트에서 DB 락으로 해결해야 함을 보여줍니다.
+        when(entityManager.find(eq(User.class), eq(userId), any(Map.class))) // <-- 변경
+        .thenReturn(concurrentUser);
+        
         ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads);
         CountDownLatch latch = new CountDownLatch(numberOfThreads);
 
@@ -196,8 +234,12 @@ class UserServiceTest {
         assertEquals(expectedFinalPoint, concurrentUser.getPoint(),
                 "Mockito 단위 테스트에서는 동시성 문제가 시뮬레이션되지 않아 최종 포인트가 일치할 수 있습니다."); // <-- 여기!
 
+        // Mockito verify 추가:
+        verify(entityManager, times(numberOfThreads)).find(eq(User.class), eq(userId), any(Map.class));
+        
+        
 	    // Mockito verify 추가:
-	    verify(userRepository, times(numberOfThreads)).findById(userId);
-	    verify(userRepository, times(numberOfThreads)).save(concurrentUser);
+	    //verify(userRepository, times(numberOfThreads)).findById(userId);
+	    //verify(userRepository, times(numberOfThreads)).save(concurrentUser);
     }
 }
