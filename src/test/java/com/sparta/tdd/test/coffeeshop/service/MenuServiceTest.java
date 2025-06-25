@@ -68,8 +68,8 @@ class MenuServiceTest {
         // Then
         assertThat(result).isNotNull();
         assertThat(result).hasSize(2);
-        assertThat(result.get(0).getName()).isEqualTo("TestMenu1");
-        assertThat(result.get(1).getName()).isEqualTo("TestMenu2");
+        assertThat(result.get(0).getMenuName()).isEqualTo("TestMenu1");
+        assertThat(result.get(1).getMenuName()).isEqualTo("TestMenu2");
     }
 
     @Test
