@@ -10,11 +10,9 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Entity
 @Getter
-@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "users") // 테이블 이름을 "user" 대신 "users"로 변경
 @AllArgsConstructor
@@ -24,7 +22,7 @@ public class User {
     @Column(name = "user_id") // 컬럼명 명시
     private String userId; // 사용자 식별값은 String 타입으로 명세됨
 
-    private String username; // 사용자 이름 (필요시 추가)
+    private String userName; // 사용자 이름
     private long point;
 
     @Version // 낙관적 락을 위한 버전 필드
@@ -34,7 +32,7 @@ public class User {
     public User(String userId, long point) {
         this.userId = userId;
         this.point = point;
-        this.username = userId; // 임시로 userId를 username으로 사용
+        this.userName = userId; // 임시로 userId를 username으로 사용
         this.version = 0L;
     }
     
@@ -44,14 +42,24 @@ public class User {
             this.version = 0L; // null이면 0으로 초기화
         }
     }
+    
+    // 이 메서드는 외부에서의 직접적인 버전 조작을 막으면서, 테스트와 JPA 프레임워크가 필요할 때 사용할 수 있도록 합니다.
+    void setVersion(Long version) {
+        this.version = version;
+    }
+    
+    // 이 메서드는 주로 관리 목적(예: 테스트 환경 초기화, 특정 사용자 데이터 리셋)으로 사용될 수 있습니다.
+    public void resetPointAndVersionState() {
+        this.point = 0L;
+        this.version = 0L; // 버전도 0으로 명시적 초기화
+    }
 
     // 포인트 충전 로직
     public void chargePoint(long amount) {
         // 비즈니스 로직: 음수 금액 방지는 Service 계층에서 먼저 처리되지만, 도메인에서도 방어 로직을 두는 것이 좋습니다.
         if (amount <= 0) {
             // 여기서는 예외를 던지기보다 Service 계층에서 먼저 처리되도록 합니다.
-            // IllegalArgumentException("충전 금액은 0보다 커야 합니다.");
-            return;
+        	throw new IllegalArgumentException("충전 금액은 0보다 커야 합니다.");        	 
         }
         this.point += amount;
     }

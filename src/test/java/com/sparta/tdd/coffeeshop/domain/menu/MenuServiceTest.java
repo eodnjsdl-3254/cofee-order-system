@@ -1,4 +1,4 @@
-package com.sparta.tdd.test.coffeeshop.service;
+package com.sparta.tdd.coffeeshop.domain.menu;
 
 
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -30,7 +30,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
-import com.sparta.tdd.coffeeshop.domain.menu.Menu;
 import com.sparta.tdd.coffeeshop.domain.menu.dto.MenuResponse;
 import com.sparta.tdd.coffeeshop.domain.menu.dto.PopularMenuResponse;
 import com.sparta.tdd.coffeeshop.domain.menu.repo.MenuRepository;

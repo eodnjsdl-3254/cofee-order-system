@@ -3,14 +3,12 @@ package com.sparta.tdd.coffeeshop.domain.order.dto;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.time.LocalDateTime;
 
 import com.sparta.tdd.coffeeshop.domain.order.Order;
 
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class OrderResponse {
@@ -25,12 +23,12 @@ public class OrderResponse {
     private Order.OrderStatus status; // 주문 상태
 
     // Order 엔티티로부터 응답 DTO를 생성하는 팩토리 메서드 (혹은 생성자)
-    public static OrderResponse from(Order order, String menuName, long remainingPoints) {
+    public static OrderResponse from(Order order, long remainingPoints) {
         return new OrderResponse(
                 order.getOrderId(),
                 order.getUserId(),
-                order.getMenuId(),
-                menuName, // 메뉴 이름은 별도로 받아서 설정
+                order.getMenu().getId(),
+                order.getMenu().getName(), // 메뉴 이름은 별도로 받아서 설정
                 order.getQuantity(),
                 order.getTotalPrice(),
                 remainingPoints,

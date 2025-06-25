@@ -56,7 +56,7 @@ public class OrderService {
         }
         log.debug("주문 수량 유효성 검사 통과.");
 
-        // --- 동시성 충돌 처리를 위한 try-catch 블록 ---
+        // --- 동시성 충돌 처리를 위한 try-catch 블록 (낙관적 락을 가정) ---
         try {
 	        // 2. 사용자 조회
 	        log.debug("사용자 조회 시도: userId={}", request.getUserId());
@@ -79,7 +79,7 @@ public class OrderService {
 	        log.info("메뉴 조회 성공: menuId={}, menuName={}, menuPrice={}",
 	                 menu.getId(), menu.getName(), menu.getPrice());
 	
-	        // 4. 총 결제 금액 계산 및 클라이언트 요청 금액과의 비교 (선택 사항이나 권장)
+	        // 4. 총 결제 금액 계산 및 클라이언트 요청 금액과의 비교
 	        log.debug("총 결제 금액 계산 시작: menuPrice={}, quantity={}", menu.getPrice(), request.getQuantity());
 	        long calculatedTotalPrice = (long) menu.getPrice() * request.getQuantity();
 	
@@ -105,23 +105,22 @@ public class OrderService {
 	        user.deductPoint(calculatedTotalPrice); // User 엔티티의 deductPoint 메서드 사용
 	        log.info("포인트 차감 완료: userId={}, 차감 후 잔액={}", user.getUserId(), user.getPoint());
 	
-	        // 6. 업데이트된 사용자 정보 저장 (Transactional 덕분에 flush 시점에 자동 반영될 수도 있지만, 명시적으로 save)
-	        // 비관적 락을 사용한 조회 후 엔티티 변경은 자동으로 업데이트됩니다. 명시적 save는 필수는 아님.
-	        // 하지만 Mockito 테스트 시 save 호출을 verify하기 위해 명시적으로 호출하는 경우가 많습니다.
+	        // 6. 업데이트된 사용자 정보 저장 (낙관적 락의 핵심: 버전 필드를 통한 동시성 검증)
+	        // findById로 조회된 user 엔티티의 변경은 Transactional 덕분에 flush 시점에 업데이트 됩니다.
+            // 여기서는 낙관적 락의 버전 체크와 update를 위해 명시적으로 save를 호출하는 것이 좋습니다.
+            // ObjectOptimisticLockingFailureException은 이 save 호출 또는 flush 시점에서 발생합니다.
 	        userRepository.save(user); // 변경된 User 엔티티를 명시적으로 저장
 	        log.debug("업데이트된 사용자 정보 저장 호출 완료.");
 	
 	
 	        // 7. 주문 엔티티 생성
 	        log.debug("주문 엔티티 생성 시작...");
-	        // Order 엔티티에서 ID, orderDate, status가 @GeneratedValue, @Builder.Default 등으로 자동 설정된다고 가정합니다.
 	        Order order = Order.builder()
 	                .userId(request.getUserId())
-	                .menuId(request.getMenuId())
+	                .menu(menu)
 	                .quantity(request.getQuantity())
 	                .totalPrice(calculatedTotalPrice) // 계산된 최종 가격 사용
-	                // .orderDate(LocalDateTime.now()) // @Builder.Default가 있다면 불필요
-	                // .status(Order.OrderStatus.COMPLETED) // @Builder.Default가 있다면 불필요
+	                // orderDate와 status는 @Builder.Default로 자동 설정
 	                .build();
 	        log.debug("주문 엔티티 생성 완료: 임시 Order ID={}", order.getOrderId()); // ID가 아직 DB에 저장 전이라면 null일 수 있음
 	
@@ -129,28 +128,32 @@ public class OrderService {
 	        Order savedOrder = orderRepository.save(order);
 	        log.info("주문 엔티티 최종 저장 완료: orderId={}", savedOrder.getOrderId()); // DB 저장 후 실제 ID 확인
 	
-	        // 9. 데이터 수집 플랫폼으로 실시간 전송 (비동기 처리)
+	        // 9. 데이터 수집 플랫폼으로 실시간 전송
+	        // 현재는 동기 호출이지만, "실시간 전송" 요구사항에 따라 메시지 큐를 통한 비동기 처리 고려 가능
 	        log.info("데이터 수집 플랫폼으로 주문 내역 전송 시작: userId={}, menuId={}, totalPrice={}",
-	                 savedOrder.getUserId(), savedOrder.getMenuId(), savedOrder.getTotalPrice());
+	                 savedOrder.getUserId(), savedOrder.getMenu().getId(), savedOrder.getTotalPrice());
 	        
 	        // Map<String, Object> 형태로 데이터 구성
             Map<String, Object> orderDataForCollection = new HashMap<>();
             orderDataForCollection.put("userId", savedOrder.getUserId());
-            orderDataForCollection.put("menuId", savedOrder.getMenuId());
+            orderDataForCollection.put("menuId", savedOrder.getMenu().getId());
             orderDataForCollection.put("paymentAmount", savedOrder.getTotalPrice());
             orderDataForCollection.put("orderId", savedOrder.getOrderId());
             orderDataForCollection.put("quantity", savedOrder.getQuantity());
             orderDataForCollection.put("orderDate", savedOrder.getOrderDate().toString()); // LocalDateTime을 String으로 변환
-            
+            orderDataForCollection.put("menuName", savedOrder.getMenu().getName());
+            orderDataForCollection.put("userName", user.getUserName()); 
             dataCollectionPlatformClient.sendOrderData(orderDataForCollection); // Map 형태로 전달
             log.info("데이터 수집 플랫폼 전송 로직 호출 완료.");
 
 	        
 	        // 10. 응답 DTO 생성 및 반환
-            // OrderResponse.from() 메서드도 OrderStatus 타입 변경에 맞게 수정 필요
-            OrderResponse response = OrderResponse.from(savedOrder, menu.getName(), user.getPoint());
+            // OrderResponse.from() 메서드도 Order 엔티티의 변화에 맞게 수정 필요 
+            // (OrderResponse.from 메서드가 savedOrder.getMenu().getName()으로 직접 가져올 수 있습니다.
+            OrderResponse response = OrderResponse.from(savedOrder, user.getPoint());
             log.info("주문 처리 최종 완료: orderId={}", response.getOrderId());
             return response;
+            
 	    } catch (ObjectOptimisticLockingFailureException e) {
 	        // 낙관적 락 충돌 발생 시
 	        log.warn("주문 실패: 낙관적 락 충돌 발생. userId={}, errorMessage={}", request.getUserId(), e.getMessage());

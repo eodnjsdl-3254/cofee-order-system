@@ -109,8 +109,9 @@ public class UserService {
         log.info("resetUserPointAndVersion 실행: 사용자 ID {}", userId);
         userRepository.findById(userId) // PESSIMISTIC_WRITE 락이 여기서 걸림
                 .ifPresentOrElse(user -> {
-                    user.setPoint(0L);
-                    user.setVersion(0L);
+                    //user.setPoint(0L);
+                    //user.setVersion(0L);
+                	user.resetPointAndVersionState();
                     userRepository.save(user); // 변경 사항 저장 (트랜잭션 커밋 시 DB에 반영)
                     log.info("사용자 {}의 포인트와 버전이 초기화되었습니다. 최종 포인트: {}", userId, user.getPoint());
                 }, () -> {

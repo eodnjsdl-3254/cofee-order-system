@@ -9,7 +9,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.sparta.tdd.coffeeshop.domain.menu.Menu;
-//import com.sparta.tdd.coffeeshop.domain.menu.dto.PopularMenuResponse;
 import com.sparta.tdd.coffeeshop.domain.menu.dto.PopularMenuResponse.PopularMenuProjection;
 
 // 이 인터페이스는 JpaRepository를 상속받아 DB 접근 메서드를 제공할 것 (지금은 Mocking으로 충분)
@@ -24,11 +23,11 @@ public interface MenuRepository extends JpaRepository<Menu, Long>{
 	 * @param pageable 상위 N개 (예: 3개)를 제한하기 위한 Pageable 객체
 	 * @return PopularMenuProjection 객체의 리스트
 	 */
-	@Query(value = "SELECT m.id AS id, m.name AS menuName, m.price AS price, COUNT(o.orderId) AS orderCount " +  
-            "FROM Order o JOIN Menu m ON o.menuId = m.id " + // Order 엔티티와 Menu 엔티티를 조인
-            "WHERE o.orderDate >= :sevenDaysAgo " +
-            "GROUP BY m.id, m.name, m.price " + // SELECT 절의 집계 함수가 아닌 모든 컬럼을 GROUP BY에 포함
-            "ORDER BY COUNT(o.orderId) DESC, m.id ASC") // 주문 횟수 내림차순 정렬, 동점 시 메뉴 ID 오름차순
+	@Query(value = "SELECT m.id AS id, m.name AS menuName, m.price AS price, COUNT(o.order_id) AS orderCount " + // SQL 컬럼명 사용
+            "FROM orders o JOIN menu m ON o.menu_id = m.id " + // 실제 테이블명과 컬럼명 사용
+            "WHERE o.order_date >= :sevenDaysAgo " +
+            "GROUP BY m.id, m.name, m.price " +
+            "ORDER BY COUNT(o.order_id) DESC, m.id ASC", nativeQuery = true)  // JPQL 대신 네이티브 SQL 쿼리 사용
 	List<PopularMenuProjection> findPopularMenuProjectionsInLast7Days(
 	     @Param("sevenDaysAgo") LocalDateTime sevenDaysAgo,
 	     Pageable pageable

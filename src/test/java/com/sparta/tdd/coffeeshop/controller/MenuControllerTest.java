@@ -1,4 +1,4 @@
-package com.sparta.tdd.test.coffeeshop.controller;
+package com.sparta.tdd.coffeeshop.controller;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
@@ -96,61 +96,68 @@ public class MenuControllerTest {
     @DisplayName("GET /api/menus/popular: 최근 7일간 가장 많이 주문된 상위 3개 메뉴를 정확히 반환한다.")
     void getPopularMenus_Success() throws Exception {
         // Given (준비): 특정 메뉴들의 주문 데이터를 삽입하여 인기 메뉴 시나리오 구성
-        // @BeforeEach에서 삽입된 메뉴 ID (1L ~ 5L)를 활용합니다.
-
-    	// @BeforeEach에서 메뉴는 이미 삽입되었으므로, 해당 ID를 사용합니다.
-    	
-        // 주문 날짜를 현재 시점으로부터 약간 과거로 설정하여 항상 7일 이내에 포함되도록 함
         LocalDateTime now = LocalDateTime.now();
         
-    	// 메뉴 1: 라떼 (가장 인기) - 10회 주문
+    	// 변경된 부분: menuId 대신 Menu 엔티티를 직접 조회하여 사용
+        Menu latteMenu = menuRepository.findById(latteId)
+                .orElseThrow(() -> new RuntimeException("라떼 메뉴를 찾을 수 없습니다."));
+        Menu americanoMenu = menuRepository.findById(americanoId)
+            .orElseThrow(() -> new RuntimeException("아메리카노 메뉴를 찾을 수 없습니다."));
+        Menu cappuccinoMenu = menuRepository.findById(cappuccinoId)
+            .orElseThrow(() -> new RuntimeException("카푸치노 메뉴를 찾을 수 없습니다."));
+        Menu espressoMenu = menuRepository.findById(espressoId)
+            .orElseThrow(() -> new RuntimeException("에스프레소 메뉴를 찾을 수 없습니다."));
+
+        // 메뉴 1: 라떼 (가장 인기) - 10회 주문
         for (int i = 0; i < 10; i++) {
             orderRepository.save(Order.builder()
-                    .userId("user1-" + i)
-                    .menuId(latteId)
-                    .quantity(1)
-                    .totalPrice(5000L)
-                    .orderDate(now.minus(Duration.ofMinutes(10 + i))) // 현재 시간보다 조금 전으로 설정
-                    .status(Order.OrderStatus.COMPLETED)
-                    .build());
+                .userId("user1-" + i)
+                .menu(latteMenu) // <--- 이제 Menu 객체를 직접 전달합니다.
+                .quantity(1)
+                .totalPrice(5000L)
+                .orderDate(now.minus(Duration.ofMinutes(10 + i)))
+                .status(Order.OrderStatus.COMPLETED)
+                .build());
         }
         // 메뉴 2: 아메리카노 (두 번째 인기) - 8회 주문
         for (int i = 0; i < 8; i++) {
             orderRepository.save(Order.builder()
-                    .userId("user2-" + i)
-                    .menuId(americanoId)
-                    .quantity(1)
-                    .totalPrice(4000L)
-                    .orderDate(now.minus(Duration.ofMinutes(30 + i))) // 현재 시간보다 조금 더 전으로 설정
-                    .status(Order.OrderStatus.COMPLETED)
-                    .build());
+                .userId("user2-" + i)
+                .menu(americanoMenu) // <--- 이제 Menu 객체를 직접 전달합니다.
+                .quantity(1)
+                .totalPrice(4000L)
+                .orderDate(now.minus(Duration.ofMinutes(30 + i)))
+                .status(Order.OrderStatus.COMPLETED)
+                .build());
         }
         // 메뉴 3: 카푸치노 (세 번째 인기) - 6회 주문
         for (int i = 0; i < 6; i++) {
             orderRepository.save(Order.builder()
-                    .userId("user3-" + i)
-                    .menuId(cappuccinoId)
-                    .quantity(1)
-                    .totalPrice(5500L)
-                    .orderDate(now.minus(Duration.ofMinutes(50 + i))) // 현재 시간보다 더 전으로 설정
-                    .status(Order.OrderStatus.COMPLETED)
-                    .build());
+                .userId("user3-" + i)
+                .menu(cappuccinoMenu) // <--- 이제 Menu 객체를 직접 전달합니다.
+                .quantity(1)
+                .totalPrice(5500L)
+                .orderDate(now.minus(Duration.ofMinutes(50 + i)))
+                .status(Order.OrderStatus.COMPLETED)
+                .build());
         }
-        
+
         // 메뉴 4: 에스프레소 (인기 없음) - 2회 주문 (7일 이내)
-        orderRepository.save(Order.builder().userId("userEspresso1").menuId(espressoId).quantity(1).totalPrice(3000L).orderDate(now.minusHours(2)).status(Order.OrderStatus.COMPLETED).build());
-        orderRepository.save(Order.builder().userId("userEspresso2").menuId(espressoId).quantity(1).totalPrice(3000L).orderDate(now.minusHours(3)).status(Order.OrderStatus.COMPLETED).build());
+        orderRepository.save(Order.builder()
+            .userId("userEspresso1").menu(espressoMenu).quantity(1).totalPrice(3000L).orderDate(now.minusHours(2)).status(Order.OrderStatus.COMPLETED).build());
+        orderRepository.save(Order.builder()
+            .userId("userEspresso2").menu(espressoMenu).quantity(1).totalPrice(3000L).orderDate(now.minusHours(3)).status(Order.OrderStatus.COMPLETED).build());
 
 
         // When & Then
         mockMvc.perform(get("/api/menus/popular"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$.length()").value(3))
-                // PopularMenuResponse DTO의 필드명은 'menuName'이므로, 'name' 대신 'menuName'을 사용합니다.
-                .andExpect(jsonPath("$[0].menuName").value("라떼"))
-                .andExpect(jsonPath("$[1].menuName").value("아메리카노"))
-                .andExpect(jsonPath("$[2].menuName").value("카푸치노"));
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$").isArray())
+            .andExpect(jsonPath("$.length()").value(3))
+            // PopularMenuResponse DTO의 필드명은 'menuName'이므로, 'name' 대신 'menuName'을 사용합니다.
+            .andExpect(jsonPath("$[0].menuName").value("라떼"))
+            .andExpect(jsonPath("$[1].menuName").value("아메리카노"))
+            .andExpect(jsonPath("$[2].menuName").value("카푸치노"));
     }
 
     @Test
@@ -174,36 +181,42 @@ public class MenuControllerTest {
 
         // 테스트용 고정된 날짜 설정
         LocalDateTime now = LocalDateTime.now();
+        
+        // 변경된 부분: menuId 대신 Menu 엔티티를 직접 조회하여 사용
+        Menu latteMenu = menuRepository.findById(latteId)
+                .orElseThrow(() -> new RuntimeException("라떼 메뉴를 찾을 수 없습니다."));
+        Menu americanoMenu = menuRepository.findById(americanoId)
+            .orElseThrow(() -> new RuntimeException("아메리카노 메뉴를 찾을 수 없습니다."));
 
         // 메뉴 1: 라떼 - 5회 주문
         for (int i = 0; i < 5; i++) {
             orderRepository.save(Order.builder()
-                    .userId("userA-" + i)
-                    .menuId(latteId)
-                    .quantity(1)
-                    .totalPrice(5000L)
-                    .orderDate(now.minus(Duration.ofMinutes(5 + i))) // 현재 시간보다 조금 전으로 설정
-                    .status(Order.OrderStatus.COMPLETED)
-                    .build());
+                .userId("userA-" + i)
+                .menu(latteMenu) // <--- 이제 Menu 객체를 직접 전달합니다.
+                .quantity(1)
+                .totalPrice(5000L)
+                .orderDate(now.minus(Duration.ofMinutes(5 + i)))
+                .status(Order.OrderStatus.COMPLETED)
+                .build());
         }
         // 메뉴 2: 아메리카노 - 3회 주문
         for (int i = 0; i < 3; i++) {
             orderRepository.save(Order.builder()
-                    .userId("userB-" + i)
-                    .menuId(americanoId)
-                    .quantity(1)
-                    .totalPrice(4000L)
-                    .orderDate(now.minus(Duration.ofMinutes(20 + i))) // 현재 시간보다 조금 더 전으로 설정
-                    .status(Order.OrderStatus.COMPLETED)
-                    .build());
+                .userId("userB-" + i)
+                .menu(americanoMenu) // <--- 이제 Menu 객체를 직접 전달합니다.
+                .quantity(1)
+                .totalPrice(4000L)
+                .orderDate(now.minus(Duration.ofMinutes(20 + i)))
+                .status(Order.OrderStatus.COMPLETED)
+                .build());
         }
 
         // When & Then
         mockMvc.perform(get("/api/menus/popular"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].menuName").value("라떼"))
-                .andExpect(jsonPath("$[1].menuName").value("아메리카노"));
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$").isArray())
+            .andExpect(jsonPath("$.length()").value(2))
+            .andExpect(jsonPath("$[0].menuName").value("라떼"))
+            .andExpect(jsonPath("$[1].menuName").value("아메리카노"));
     }
 }

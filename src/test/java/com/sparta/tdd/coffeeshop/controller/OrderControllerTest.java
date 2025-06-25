@@ -1,4 +1,4 @@
-package com.sparta.tdd.test.coffeeshop.controller;
+package com.sparta.tdd.coffeeshop.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sparta.tdd.coffeeshop.domain.menu.Menu;

@@ -1,6 +1,5 @@
 package com.sparta.tdd.coffeeshop.controller.domain;
 
-import com.sparta.tdd.coffeeshop.domain.menu.Menu;
 import com.sparta.tdd.coffeeshop.domain.menu.dto.MenuResponse;
 import com.sparta.tdd.coffeeshop.domain.menu.dto.PopularMenuResponse;
 import com.sparta.tdd.coffeeshop.domain.order.dto.OrderRequest;
@@ -32,10 +31,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 
 @RestController
