@@ -109,7 +109,7 @@ public class MenuControllerTest {
                     .userId("user1-" + i)
                     .menuId(latteId)
                     .quantity(1)
-                    .totalPrice(5000)
+                    .totalPrice(5000L)
                     .orderDate(now.minus(Duration.ofMinutes(10 + i))) // 현재 시간보다 조금 전으로 설정
                     .status(Order.OrderStatus.COMPLETED)
                     .build());
@@ -120,7 +120,7 @@ public class MenuControllerTest {
                     .userId("user2-" + i)
                     .menuId(americanoId)
                     .quantity(1)
-                    .totalPrice(4000)
+                    .totalPrice(4000L)
                     .orderDate(now.minus(Duration.ofMinutes(30 + i))) // 현재 시간보다 조금 더 전으로 설정
                     .status(Order.OrderStatus.COMPLETED)
                     .build());
@@ -131,15 +131,15 @@ public class MenuControllerTest {
                     .userId("user3-" + i)
                     .menuId(cappuccinoId)
                     .quantity(1)
-                    .totalPrice(5500)
+                    .totalPrice(5500L)
                     .orderDate(now.minus(Duration.ofMinutes(50 + i))) // 현재 시간보다 더 전으로 설정
                     .status(Order.OrderStatus.COMPLETED)
                     .build());
         }
         
         // 메뉴 4: 에스프레소 (인기 없음) - 2회 주문 (7일 이내)
-        orderRepository.save(Order.builder().userId("userEspresso1").menuId(espressoId).quantity(1).totalPrice(3000).orderDate(now.minusHours(2)).status(Order.OrderStatus.COMPLETED).build());
-        orderRepository.save(Order.builder().userId("userEspresso2").menuId(espressoId).quantity(1).totalPrice(3000).orderDate(now.minusHours(3)).status(Order.OrderStatus.COMPLETED).build());
+        orderRepository.save(Order.builder().userId("userEspresso1").menuId(espressoId).quantity(1).totalPrice(3000L).orderDate(now.minusHours(2)).status(Order.OrderStatus.COMPLETED).build());
+        orderRepository.save(Order.builder().userId("userEspresso2").menuId(espressoId).quantity(1).totalPrice(3000L).orderDate(now.minusHours(3)).status(Order.OrderStatus.COMPLETED).build());
 
 
         // When & Then
@@ -181,7 +181,7 @@ public class MenuControllerTest {
                     .userId("userA-" + i)
                     .menuId(latteId)
                     .quantity(1)
-                    .totalPrice(5000)
+                    .totalPrice(5000L)
                     .orderDate(now.minus(Duration.ofMinutes(5 + i))) // 현재 시간보다 조금 전으로 설정
                     .status(Order.OrderStatus.COMPLETED)
                     .build());
@@ -192,7 +192,7 @@ public class MenuControllerTest {
                     .userId("userB-" + i)
                     .menuId(americanoId)
                     .quantity(1)
-                    .totalPrice(4000)
+                    .totalPrice(4000L)
                     .orderDate(now.minus(Duration.ofMinutes(20 + i))) // 현재 시간보다 조금 더 전으로 설정
                     .status(Order.OrderStatus.COMPLETED)
                     .build());

@@ -4,7 +4,9 @@ package com.sparta.tdd.coffeeshop.domain.user.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.stereotype.Service;
@@ -13,6 +15,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.sparta.tdd.coffeeshop.cmmn.exception.CustomException;
 import com.sparta.tdd.coffeeshop.cmmn.exception.ErrorCode;
+import com.sparta.tdd.coffeeshop.domain.menu.Menu;
+import com.sparta.tdd.coffeeshop.domain.menu.repo.MenuRepository;
+import com.sparta.tdd.coffeeshop.domain.order.repo.OrderRepository;
 import com.sparta.tdd.coffeeshop.domain.user.User;
 import com.sparta.tdd.coffeeshop.domain.user.dto.PointChargeResponse;
 import com.sparta.tdd.coffeeshop.domain.user.repo.UserRepository;
@@ -27,6 +32,8 @@ import jakarta.persistence.LockModeType;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final OrderRepository orderRepository; // 주문 초기화를 위해 주입
+    private final MenuRepository menuRepository; // 메뉴 초기화를 위해 주입
     private final EntityManager entityManager; 
 
     @Transactional(readOnly = false, propagation = Propagation.REQUIRED) // 포인트 충전은 데이터 변경이므로 @Transactional 필수
@@ -59,6 +66,42 @@ public class UserService {
 
         // 4. 응답 DTO 생성 및 반환
         return PointChargeResponse.from(user);
+    }
+    
+    /**
+     * 동시 주문 테스트를 위해 모든 사용자, 주문, 메뉴 데이터를 초기화하고 기본 사용자와 메뉴를 생성합니다.
+     * 이 메서드는 테스트 용도로만 사용되어야 하며, 실제 운영 환경에서는 절대로 호출해서는 안 됩니다.
+     */
+    @Transactional
+    public void resetUsersAndOrdersForConcurrentOrderTest() {
+        // 1. 모든 주문 데이터 삭제
+        orderRepository.deleteAll();
+        // 2. 모든 사용자 데이터 삭제
+        userRepository.deleteAll();
+        // 3. 모든 메뉴 데이터 삭제 (만약 테스트마다 초기화가 필요하다면)
+        // JpaRepository의 deleteAll()은 DELETE 문을 실행하며, MySQL에서 auto_increment를 자동으로 리셋하지 않을 수 있습니다.
+        // 테스트 환경에서는 'TRUNCATE TABLE'을 사용하는 것이 가장 확실하나, 여기서는 deleteAll() 유지.
+        menuRepository.deleteAll();
+
+        // 4. 테스트를 위한 기본 사용자 재삽입 (초기 포인트 넉넉하게)
+        List<User> initialUsers = Arrays.asList(
+                new User("testUser1", "테스트 사용자1", 1000000L, 0L), // String, String, long, Long
+                new User("testUser2", "테스트 사용자2", 1000000L, 0L),
+                new User("user001", "테스트 사용자001", 1000000L, 0L),
+                new User("concurrentUser", "동시성테스트용", 1000000L, 0L),
+                new User("eodnjsdl", "당신_사용자", 1000000L, 0L)
+        );
+        userRepository.saveAll(initialUsers);
+
+        // 5. 테스트를 위한 기본 메뉴 재삽입 (ID 1인 아메리카노가 존재하도록)
+        List<Menu> initialMenus = Arrays.asList(
+            new Menu("아메리카노", 4000), // ID 1
+            new Menu("카페 라떼", 4500)   // ID 2
+        );
+        menuRepository.saveAll(initialMenus);
+
+        // Note: Menu 엔티티의 ID가 @GeneratedValue가 아니라면, 직접 ID를 설정해야 합니다.
+        // 위 예시에서는 Menu 엔티티에 @AllArgsConstructor가 있고, ID를 직접 지정할 수 있다고 가정합니다.
     }
     
     @Transactional(readOnly = false, propagation = Propagation.REQUIRED) // readOnly = false 가 기본값입니다.
