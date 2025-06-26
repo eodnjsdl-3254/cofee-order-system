@@ -112,7 +112,7 @@ public class MenuControllerTest {
         for (int i = 0; i < 10; i++) {
             orderRepository.save(Order.builder()
                 .userId("user1-" + i)
-                .menu(latteMenu) // <--- 이제 Menu 객체를 직접 전달합니다.
+                .menu(latteMenu)
                 .quantity(1)
                 .totalPrice(5000L)
                 .orderDate(now.minus(Duration.ofMinutes(10 + i)))
@@ -123,7 +123,7 @@ public class MenuControllerTest {
         for (int i = 0; i < 8; i++) {
             orderRepository.save(Order.builder()
                 .userId("user2-" + i)
-                .menu(americanoMenu) // <--- 이제 Menu 객체를 직접 전달합니다.
+                .menu(americanoMenu)
                 .quantity(1)
                 .totalPrice(4000L)
                 .orderDate(now.minus(Duration.ofMinutes(30 + i)))
@@ -134,7 +134,7 @@ public class MenuControllerTest {
         for (int i = 0; i < 6; i++) {
             orderRepository.save(Order.builder()
                 .userId("user3-" + i)
-                .menu(cappuccinoMenu) // <--- 이제 Menu 객체를 직접 전달합니다.
+                .menu(cappuccinoMenu)
                 .quantity(1)
                 .totalPrice(5500L)
                 .orderDate(now.minus(Duration.ofMinutes(50 + i)))
@@ -154,7 +154,6 @@ public class MenuControllerTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$").isArray())
             .andExpect(jsonPath("$.length()").value(3))
-            // PopularMenuResponse DTO의 필드명은 'menuName'이므로, 'name' 대신 'menuName'을 사용합니다.
             .andExpect(jsonPath("$[0].menuName").value("라떼"))
             .andExpect(jsonPath("$[1].menuName").value("아메리카노"))
             .andExpect(jsonPath("$[2].menuName").value("카푸치노"));
@@ -192,7 +191,7 @@ public class MenuControllerTest {
         for (int i = 0; i < 5; i++) {
             orderRepository.save(Order.builder()
                 .userId("userA-" + i)
-                .menu(latteMenu) // <--- 이제 Menu 객체를 직접 전달합니다.
+                .menu(latteMenu)
                 .quantity(1)
                 .totalPrice(5000L)
                 .orderDate(now.minus(Duration.ofMinutes(5 + i)))
@@ -203,7 +202,7 @@ public class MenuControllerTest {
         for (int i = 0; i < 3; i++) {
             orderRepository.save(Order.builder()
                 .userId("userB-" + i)
-                .menu(americanoMenu) // <--- 이제 Menu 객체를 직접 전달합니다.
+                .menu(americanoMenu)
                 .quantity(1)
                 .totalPrice(4000L)
                 .orderDate(now.minus(Duration.ofMinutes(20 + i)))

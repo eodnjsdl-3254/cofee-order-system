@@ -1,6 +1,5 @@
 package com.sparta.tdd.coffeeshop.controller.domain;
 
-import com.sparta.tdd.coffeeshop.domain.menu.Menu; // Menu 엔티티 임포트 추가
 import com.sparta.tdd.coffeeshop.domain.menu.dto.MenuResponse;
 import com.sparta.tdd.coffeeshop.domain.menu.dto.PopularMenuResponse;
 import com.sparta.tdd.coffeeshop.domain.menu.service.MenuService;
@@ -37,8 +36,8 @@ public class MenuController {
     
     @Operation(summary = "단일 메뉴 조회", description = "메뉴 ID를 통해 특정 커피 메뉴의 상세 정보를 조회합니다.")
     @GetMapping("/menus/{id}")
-    public ResponseEntity<Menu> getMenuById(@PathVariable Long id) { // ❗ 반환 타입을 MenuResponse에서 Menu 엔티티로 변경
-        Menu menu = menuService.getMenuById(id); // MenuService는 Menu 엔티티를 반환하도록 이미 수정됨
+    public ResponseEntity<MenuResponse> getMenuById(@PathVariable Long id) { 
+    	MenuResponse menu = menuService.getMenuById(id); 
         return ResponseEntity.ok(menu); 
     }
     

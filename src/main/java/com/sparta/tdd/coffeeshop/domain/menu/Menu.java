@@ -11,13 +11,11 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 
 
 @Entity
 @Getter
-@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED) // JPA는 기본 생성자를 필요로 합니다.
 @AllArgsConstructor // 모든 필드 포함 생성자 (Lombok이 자동으로 생성)
 @Builder // 빌더 패턴 활성화

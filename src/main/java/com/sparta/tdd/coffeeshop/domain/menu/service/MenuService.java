@@ -35,11 +35,11 @@ public class MenuService {
     public void initMenuData() {
         if (menuRepository.count() == 0) { // 메뉴가 없을 때만 초기화
             log.info("초기 메뉴 데이터 삽입을 시작합니다.");
-            menuRepository.save(new Menu(1L, "아메리카노", 3000));
-            menuRepository.save(new Menu(2L, "카페라떼", 4000));
-            menuRepository.save(new Menu(3L, "카푸치노", 4000));
-            menuRepository.save(new Menu(4L, "바닐라라떼", 4500));
-            menuRepository.save(new Menu(5L, "에스프레소", 2500));
+            menuRepository.save(new Menu("아메리카노", 3000));
+            menuRepository.save(new Menu("카페라떼", 4000));
+            menuRepository.save(new Menu("카푸치노", 4000));
+            menuRepository.save(new Menu("바닐라라떼", 4500));
+            menuRepository.save(new Menu("에스프레소", 2500));
             log.info("초기 메뉴 데이터 삽입 완료.");
         } else {
             log.info("메뉴 데이터가 이미 존재하여 초기화 작업을 건너뜜니다.");
@@ -64,18 +64,20 @@ public class MenuService {
      * ConcurrentTestController에서 메뉴 가격 조회를 위해 직접 Menu 엔티티를 반환합니다.
      *
      * @param id 조회할 메뉴의 ID
-     * @return 조회된 Menu 엔티티
+     * @return 조회된 MenuResponse DTO
      * @throws CustomException 메뉴를 찾을 수 없을 경우 (ErrorCode.MENU_NOT_FOUND)
      */
-    public Menu getMenuById(Long id) { // ❗ 반환 타입을 MenuResponse에서 Menu 엔티티로 변경
+    public MenuResponse getMenuById(Long id) { // ❗ 반환 타입을 MenuResponse에서 Menu 엔티티로 변경
         log.info("메뉴 ID로 조회 서비스 시작: menuId={}", id);
         // menuRepository를 사용하여 ID로 메뉴를 찾습니다.
         // Optional이 비어있으면 CustomException을 발생시킵니다.
-        return menuRepository.findById(id)
+        MenuResponse menu = menuRepository.findById(id)    
+        		.map(MenuResponse::from) // 찾은 Menu 엔티티를 MenuResponse 팩토리 메서드를 사용하여 DTO로 변환
                 .orElseThrow(() -> {
                     log.error("메뉴를 찾을 수 없음: menuId={}", id);
                     return new CustomException(ErrorCode.MENU_NOT_FOUND, "메뉴를 찾을 수 없습니다.");
                 });
+        return menu; 
     }
     
     /**

@@ -2,12 +2,9 @@ package com.sparta.tdd.coffeeshop.domain.menu;
 
 
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.assertj.core.api.Assertions.assertThat; 
 
-
-
-import static org.assertj.core.api.Assertions.assertThat; // assertThat() 메서드를 사용하기 위해 필요
-
-import static org.mockito.BDDMockito.given; // given() 메서드를 사용하기 위해 필요
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.times;
@@ -127,15 +124,15 @@ class MenuServiceTest {
         mockProjections.add(new PopularMenuProjectionImpl(1L, "Latte", 5000, 10L));
         mockProjections.add(new PopularMenuProjectionImpl(2L, "Americano", 4000, 9L));
         mockProjections.add(new PopularMenuProjectionImpl(3L, "Espresso", 3000, 8L));
-        mockProjections.add(new PopularMenuProjectionImpl(4L, "Cappuccino", 5500, 7L)); // 이 항목은 필터링되어야 함
-
+        mockProjections.add(new PopularMenuProjectionImpl(4L, "Cappuccino", 5500, 7L)); 
+        
         // 리포지토리 호출을 Mock하여 Pageable이 실제 반환할 *첫 3개* 요소를 반환하도록 합니다.
         // Pageable이 사용될 때 리포지토리 자체가 제한을 처리합니다.
         // 따라서 Mock할 때는 실제 리포지토리가 *반환할* 내용을 반영해야 합니다.
         // 실제 쿼리가 Pageable 때문에 3개를 반환해야 한다면, Mock도 3개를 반환하도록 합니다.
         // 리포지토리가 Pageable 요청을 정확히 반환한다고 가정합시다.
         when(menuRepository.findPopularMenuProjectionsInLast7Days(any(LocalDateTime.class), any(Pageable.class)))
-            .thenReturn(mockProjections.subList(0, 3)); // <<<<<<<<<<<<<<< 여기가 핵심 변경 사항
+            .thenReturn(mockProjections.subList(0, 3)); 
 
         // When
         List<PopularMenuResponse> result = menuService.getPopularMenus();
@@ -164,7 +161,7 @@ class MenuServiceTest {
 
         @Override public Long getId() { return id; }
         @Override public String getMenuName() { return menuName; }
-        @Override public Integer getPrice() { return price; }
+        @Override public int getPrice() { return price; }
         @Override public Long getOrderCount() { return orderCount; }
     }
 
@@ -191,13 +188,13 @@ class MenuServiceTest {
                 new PopularMenuResponse.PopularMenuProjection() {
                     @Override public Long getId() { return 1L; }
                     @Override public String getMenuName() { return "아메리카노"; }
-                    @Override public Integer getPrice() { return 4000; }
+                    @Override public int getPrice() { return 4000; }
                     @Override public Long getOrderCount() { return 10L; }
                 },
                 new PopularMenuResponse.PopularMenuProjection() {
                     @Override public Long getId() { return 2L; }
                     @Override public String getMenuName() { return "카페 라떼"; }
-                    @Override public Integer getPrice() { return 4500; }
+                    @Override public int getPrice() { return 4500; }
                     @Override public Long getOrderCount() { return 5L; }
                 }
         );

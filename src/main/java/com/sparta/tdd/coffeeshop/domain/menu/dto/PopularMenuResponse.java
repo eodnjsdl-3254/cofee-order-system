@@ -17,7 +17,7 @@ public class PopularMenuResponse {
     public interface PopularMenuProjection {
         Long getId();
         String getMenuName(); 
-        Integer getPrice();
+        int getPrice();
         Long getOrderCount(); 
     }
 
