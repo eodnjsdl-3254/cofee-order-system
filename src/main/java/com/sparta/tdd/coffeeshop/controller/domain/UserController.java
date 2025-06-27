@@ -16,11 +16,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class UserController {
 
-    private final UserService pointService;
+    private final UserService userService;
 
     @PostMapping("/points/charge") 
     public ResponseEntity<PointChargeResponse> chargePoint(@RequestBody PointChargeRequest request) {
-        PointChargeResponse response = pointService.chargePoint(request.getUserId(), request.getAmount());
+        PointChargeResponse response = userService.chargePoint(request.getUserId(), request.getAmount());
         return ResponseEntity.ok(response);
     }
 }

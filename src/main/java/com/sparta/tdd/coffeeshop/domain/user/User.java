@@ -22,6 +22,7 @@ public class User {
     @Column(name = "user_id") // 컬럼명 명시
     private String userId; // 사용자 식별값은 String 타입으로 명세됨
 
+    @Column(name = "user_name", nullable = false)
     private String userName; // 사용자 이름
     private long point;
 

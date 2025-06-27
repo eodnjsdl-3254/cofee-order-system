@@ -28,12 +28,6 @@ import com.sparta.tdd.coffeeshop.domain.menu.Menu;
 @Builder // 이 어노테이션이 빌더 패턴을 자동으로 생성해 줍니다.
 public class Order {
 
-	// package-private setOrderId (테스트 및 JPA 내부 사용 목적)
-	// @GeneratedValue가 UUID를 생성하여 이 필드를 설정해야 하므로, 테스트에서 이를 시뮬레이션합니다.
-    void setOrderId(String orderId) {
-        this.orderId = orderId;
-    }
-	
     @Id
     @GeneratedValue(strategy = GenerationType.UUID) // JPA가 UUID를 자동으로 생성하여 orderId에 할당합니다.
     @Column(name = "order_id", nullable = false, unique = true, updatable = false) // ID는 생성 후 변경되지 않음
@@ -57,12 +51,12 @@ public class Order {
 
     @Builder.Default // Lombok 빌더 사용 시 필드 기본값 설정을 위해 추가
     @Column(name = "order_date", nullable = false)
-    private LocalDateTime orderDate = LocalDateTime.now();; // 주문 일시 (DATETIME(6)에 매핑)
+    private LocalDateTime orderDate = LocalDateTime.now(); // 주문 일시 (DATETIME(6)에 매핑)
 
     @Builder.Default // Lombok 빌더 사용 시 필드 기본값 설정을 위해 추가
     @Enumerated(EnumType.ORDINAL) // Enum의 순서값 (0, 1, 2...)으로 DB에 저장
     @Column(nullable = false)
-    private OrderStatus status = OrderStatus.COMPLETED; // 주문 상태 (예: COMPLETED 등)
+    private OrderStatus status = OrderStatus.PENDING; // 주문 상태 (예: COMPLETED 등)
 
     
     // 주문 상태 변경 메서드 예시
@@ -81,6 +75,13 @@ public class Order {
         this.status = OrderStatus.CANCELLED;
         // 추가적인 로직 (예: 재고 복구, 포인트 환불 처리 등)
     }
+
+	// package-private setOrderId (테스트 및 JPA 내부 사용 목적)
+	// @GeneratedValue가 UUID를 생성하여 이 필드를 설정해야 하므로, 테스트에서 이를 시뮬레이션합니다.
+    void setOrderId(String orderId) {
+        this.orderId = orderId;
+    }
+	
     
     /**
      * 주문 상태를 나타내는 Enum

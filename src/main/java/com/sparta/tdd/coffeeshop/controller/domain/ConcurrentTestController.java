@@ -226,10 +226,11 @@ public class ConcurrentTestController {
                     HttpHeaders headers = new HttpHeaders();
                     headers.setContentType(MediaType.APPLICATION_JSON);
 
-                    OrderRequest orderRequest = new OrderRequest();
-                    orderRequest.setUserId(userId);
-                    orderRequest.setMenuId(actualMenuId); // ❗ final 변수 사용
-                    orderRequest.setQuantity(quantity);
+                    OrderRequest orderRequest = OrderRequest.builder()
+                            .userId(userId)
+                            .menuId(actualMenuId)
+                            .quantity(quantity)
+                            .build();
 
                     HttpEntity<OrderRequest> requestEntity = new HttpEntity<>(orderRequest, headers);
 

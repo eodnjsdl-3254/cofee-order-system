@@ -85,13 +85,13 @@ public class OrderService {
 	
 	        // 클라이언트에서 넘겨준 totalPrice가 있다면, 서버에서 계산한 값과 비교하여 검증
 	        // request.getTotalPrice()가 클라이언트가 보낸 값이라고 가정합니다.
-	        if (request.getTotalPrice() != 0 && calculatedTotalPrice != request.getTotalPrice()) {
+	        /*if (request.getTotalPrice() != 0 && calculatedTotalPrice != request.getTotalPrice()) {
 	            log.warn("주문 경고: 클라이언트 제공 총 가격({})과 서버 계산 총 가격({})이 일치하지 않습니다.",
 	                     request.getTotalPrice(), calculatedTotalPrice);
 	            // 이 경우 예외를 발생시킬지, 서버 계산 가격으로 강제할지는 정책에 따라 다릅니다.
 	            // 여기서는 서버 계산 가격을 따르거나, 필요시 예외를 발생시킬 수 있습니다.
 	            // throw new CustomException(ErrorCode.INVALID_INPUT, "요청된 총 가격이 올바르지 않습니다.");
-	        }
+	        }*/
 	        log.info("최종 결제 금액 결정: {}원", calculatedTotalPrice);
 	
 	
@@ -127,7 +127,8 @@ public class OrderService {
 	        // 8. 주문 저장
 	        Order savedOrder = orderRepository.save(order);
 	        log.info("주문 엔티티 최종 저장 완료: orderId={}", savedOrder.getOrderId()); // DB 저장 후 실제 ID 확인
-	
+	        savedOrder.markAsCompleted();
+	        
 	        // 9. 데이터 수집 플랫폼으로 실시간 전송
 	        // 현재는 동기 호출이지만, "실시간 전송" 요구사항에 따라 메시지 큐를 통한 비동기 처리 고려 가능
 	        log.info("데이터 수집 플랫폼으로 주문 내역 전송 시작: userId={}, menuId={}, totalPrice={}",

@@ -157,7 +157,7 @@ class OrderServiceTest {
         long expectedRemainingPoints = initialPoint - expectedTotalPrice;
 
         // 주문 요청 DTO 생성
-        OrderRequest request = new OrderRequest(testUser.getUserId(), testMenu.getId(), quantity, expectedTotalPrice);
+        OrderRequest request = new OrderRequest(testUser.getUserId(), testMenu.getId(), quantity);
 
         // Mockito ArgumentCaptor: Mock 객체에 전달된 인자를 캡처하여 검증할 때 사용
         ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
@@ -223,7 +223,7 @@ class OrderServiceTest {
         // 호출되지 않습니다. 따라서 이 메서드들에 대한 스터빙은 불필요합니다 (UnnecessaryStubbingException 방지).
         // 만약 setUp에 이 스터빙들이 있었다면, 이 테스트에서 UnnecessaryStubbingException이 발생했을 것입니다.
 
-        OrderRequest request = new OrderRequest(testUser.getUserId(), testMenu.getId(), 2, 8000L); // 8000원 필요
+        OrderRequest request = new OrderRequest(testUser.getUserId(), testMenu.getId(), 2);
 
         // When & Then (예외 발생 확인)
         // assertThrows를 사용하여 특정 예외가 발생하는지 확인하고, 예외 객체를 캡처합니다.
@@ -252,7 +252,7 @@ class OrderServiceTest {
         // 따라서 userRepository, menuRepository 등의 Mock 객체는 전혀 호출되지 않습니다.
         // 이 테스트 메서드 내에서는 Mockito 스터빙이 필요 없습니다.
 
-        OrderRequest request = new OrderRequest(testUser.getUserId(), testMenu.getId(), 0, 0L); // 수량 0으로 요청
+        OrderRequest request = new OrderRequest(testUser.getUserId(), testMenu.getId(), 0); // 수량 0으로 요청
 
         // When & Then (예외 발생 확인)
         CustomException exception = assertThrows(CustomException.class, () -> {
@@ -283,7 +283,7 @@ class OrderServiceTest {
         // menuRepository, orderRepository, dataCollectionPlatformClient는 호출되지 않습니다.
         // 따라서 이들에 대한 스터빙은 불필요합니다.
 
-        OrderRequest request = new OrderRequest("nonExistentUser", testMenu.getId(), 1, 4000L);
+        OrderRequest request = new OrderRequest("nonExistentUser", testMenu.getId(), 1);
 
         // When & Then (예외 발생 확인)
         CustomException exception = assertThrows(CustomException.class, () -> {
@@ -316,7 +316,7 @@ class OrderServiceTest {
         // orderRepository, dataCollectionPlatformClient는 호출되지 않습니다.
         // userRepository.save()도 포인트 차감 로직까지 도달하지 못해 호출되지 않습니다.
 
-        OrderRequest request = new OrderRequest(testUser.getUserId(), 999L, 1, 4000L); // 존재하지 않는 메뉴 ID
+        OrderRequest request = new OrderRequest(testUser.getUserId(), 999L, 1); // 존재하지 않는 메뉴 ID
 
         // When & Then (예외 발생 확인)
         CustomException exception = assertThrows(CustomException.class, () -> {

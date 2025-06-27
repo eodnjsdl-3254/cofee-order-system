@@ -11,7 +11,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.sparta.tdd.coffeeshop.cmmn.exception.CustomException;
 import com.sparta.tdd.coffeeshop.cmmn.exception.ErrorCode;
-import com.sparta.tdd.coffeeshop.domain.user.User;
 import com.sparta.tdd.coffeeshop.domain.user.repo.UserRepository;
 import com.sparta.tdd.coffeeshop.domain.user.service.UserService;
 
@@ -46,14 +45,14 @@ class UserServiceTest {
     private EntityManager entityManager; // EntityManager Nock 추가
 
     @InjectMocks
-    private UserService userPointService;
+    private UserService userService;
 
     private User testUser;
 
     @BeforeEach
     void setUp() {
         // Mocking을 위한 테스트 사용자 초기화
-        testUser = new User("testUser001", 5000);
+    	testUser = new User("testUser001", "테스트 사용자001", 5000L, 0L); 
     }
 
     @Test
@@ -71,7 +70,7 @@ class UserServiceTest {
         when(userRepository.save(any(User.class))).thenReturn(testUser); // testUser의 참조를 반환하여 상태 변경 반영
 
         // When
-        userPointService.chargePoint(testUser.getUserId(), chargeAmount);
+        userService.chargePoint(testUser.getUserId(), chargeAmount);
 
         // Then
         // 1. entityManager.find가 호출되었는지 검증 (findById 대신)
@@ -94,12 +93,12 @@ class UserServiceTest {
 
         // When & Then
         CustomException negativeException = assertThrows(CustomException.class,
-                () -> userPointService.chargePoint(userId, negativeAmount));
+                () -> userService.chargePoint(userId, negativeAmount));
         assertEquals(ErrorCode.INVALID_INPUT, negativeException.getErrorCode());
         assertEquals("충전 금액은 0보다 커야 합니다.", negativeException.getMessage());
 
         CustomException zeroException = assertThrows(CustomException.class,
-                () -> userPointService.chargePoint(userId, zeroAmount));
+                () -> userService.chargePoint(userId, zeroAmount));
         assertEquals(ErrorCode.INVALID_INPUT, zeroException.getErrorCode());
         assertEquals("충전 금액은 0보다 커야 합니다.", zeroException.getMessage());
 
@@ -123,7 +122,7 @@ class UserServiceTest {
 
 	    // When & Then
 	    CustomException exception = assertThrows(CustomException.class,
-	            () -> userPointService.chargePoint(nonExistentUserId, chargeAmount));
+	            () -> userService.chargePoint(nonExistentUserId, chargeAmount));
 	
 	    assertEquals(ErrorCode.USER_NOT_FOUND, exception.getErrorCode());
 	
@@ -143,7 +142,7 @@ class UserServiceTest {
         int numberOfThreads = 10;
         long expectedFinalPoint = initialPoint + (chargeAmountPerThread * numberOfThreads);
 
-        User concurrentUser = new User(userId, initialPoint);
+        User concurrentUser = new User(userId, "동시성테스트용", initialPoint, 0L);
 
         // Mocking: entityManager.find가 호출될 때마다 '동일한' User 객체를 반환하도록 설정
         // 이 Mocking은 실제 DB의 낙관적 락 동작을 시뮬레이션하지 않습니다.
@@ -162,7 +161,7 @@ class UserServiceTest {
         for (int i = 0; i < numberOfThreads; i++) {
             executorService.submit(() -> {
                 try {
-                	userPointService.chargePoint(userId, chargeAmountPerThread);
+                	userService.chargePoint(userId, chargeAmountPerThread);
                 } catch (Exception e) {
                     System.err.println("Concurrent charge failed for " + userId + ": " + e.getMessage());
                 } finally {

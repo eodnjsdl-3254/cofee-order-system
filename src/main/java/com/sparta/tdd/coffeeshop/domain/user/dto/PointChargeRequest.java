@@ -3,11 +3,10 @@ package com.sparta.tdd.coffeeshop.domain.user.dto;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor; // Lombok 사용 예정
+import lombok.AllArgsConstructor; 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-//import lombok.Setter;
 
 @Getter
 @Setter

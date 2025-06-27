@@ -40,7 +40,7 @@ class UserControllerTest {
     @BeforeEach
     void setUp() {
         // 테스트 전에 사용자 데이터 초기화 (매 테스트마다 새 사용자 생성)
-        testUser = new User("testUser123", 1000L);
+        testUser = new User("testUser123", "테스트 사용자123", 1000L, 0L);
         userRepository.deleteAll();
         userRepository.save(testUser); // 실제 DB에 사용자 저장
     }
@@ -65,7 +65,7 @@ class UserControllerTest {
                 // DB에서 1000L이 2000L로 업데이트 되었으므로, 응답은 2000L이 될 것입니다.
                 // 따라서 기대값은 testUser의 초기값(1000L) + chargeAmount(1000L) 이 되어야 합니다.
 		        // 따라서, 초기 포인트 + 충전 금액이 기대값이 됩니다.
-		        .andExpect(jsonPath("$.currentPoint").value(1000L + chargeAmount)); // 1000L은 testUser의 초기값
+		        .andExpect(jsonPath("$.currentPoint").value(testUser.getPoint() + chargeAmount)); // 1000L은 testUser의 초기값
     }
 
     @Test

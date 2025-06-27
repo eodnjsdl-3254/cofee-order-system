@@ -17,7 +17,5 @@ public interface UserRepository extends JpaRepository<User, String> {
     @Query("SELECT u FROM User u WHERE u.userId = :userId")  
 	Optional<User> findByUserIdWithPessimisticLock(String userId);
 	
-	Optional<User> findById(String id);
-    //User save(User user); 
-    // userRepository.save(testUser);처럼 사용될 때, Spring Data JPA가 자동으로 제공하는 구현체를 통해 DB에 데이터를 저장하는 역할을 합니다.
+	Optional<User> findById(String id);    
 }
